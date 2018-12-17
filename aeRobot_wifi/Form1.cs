@@ -285,6 +285,7 @@ namespace aeRobot_wifi
         #endregion
 
         #region pause
+
         private void pause_Click(object sender, EventArgs e)
         {
             PortWrite("p");

@@ -1,0 +1,153 @@
+//server
+func void server()
+setip("192.168.101.111", "192.168.101.1", "255.255.255.0")
+socket s
+waituntil accept(s, "192.168.101.111",50000)
+waituntil write(s, "hello")
+speed vs
+vs.per=5.00
+joint  jp={0,0,0,0,0,0}
+double d=1
+double v=0.5
+string str
+while(1)
+again:
+byte date[1]
+waituntil read(s,date,1)
+str=tostr(date[0])
+switch(str)
+	case  "30h":
+		jp.j1+=d
+		waituntil write(s,"j1:"+tostr(jp.j1))
+	case  "31h":
+		jp.j1-=d	
+		waituntil write(s,"j1:"+tostr(jp.j1))
+	case  "32h":
+		jp.j2+=d
+		waituntil write(s,"j2:"+tostr(jp.j2))
+	case  "33h":
+		jp.j2-=d
+		waituntil write(s,"j2:"+tostr(jp.j2))
+	case  "34h":
+		jp.j3+=d
+		waituntil write(s,"j3:"+tostr(jp.j3))
+	case  "35h":
+		jp.j3-=d
+		waituntil write(s,"j3:"+tostr(jp.j3))
+	case  "36h":
+		jp.j4+=d
+		waituntil write(s,"j4:"+tostr(jp.j4))
+	case  "37h":
+		jp.j4-=d
+		waituntil write(s,"j4:"+tostr(jp.j4))
+	case  "38h":
+		jp.j5+=d
+		waituntil write(s,"j5:"+tostr(jp.j5))
+	case  "39h":
+		jp.j5-=d
+		waituntil write(s,"j5:"+tostr(jp.j5))
+	case  "41h":
+		jp.j6+=d
+		waituntil write(s,"j6:"+tostr(jp.j6))
+	case  "42h":
+		jp.j6-=d
+		waituntil write(s,"j6:"+tostr(jp.j6))
+	case  "43h":
+		vs.per+=v
+		 waituntil write(s,"speed:"+tostr(vs.per))
+		goto again
+	case  "44h":
+		vs.per-=v
+		waituntil write(s,"speed:"+tostr(vs.per))
+		goto again
+	case  "49h":    
+                                          waituntil write(s,"start XT")
+                                         wobj wobj1={{0,0,0,0,0,0}}
+		pose p=cpose($FLANGE,wobj1)
+		speed vl={per 0.1}
+		while(1)
+                                       waituntil write(s,"x="+tostr(p.x)+";y="+tostr(p.y)+";z="+tostr(p.z))
+		waituntil read(s,date,1)  
+                                        double d2=0.02
+		switch(tostr(date[0]))
+		case "45h":  
+                                                p.z+=d2
+                                                waituntil write(s,"z="+tostr(p.z))
+		case "46h":
+                                               p.z-=d2
+                                                waituntil write(s,"z="+tostr(p.z))                                   
+		case "47h":
+		       p.y-=d2
+                                                waituntil write(s,"y="+tostr(p.y))
+		case "48h":
+		        p.y+=d2
+                                                waituntil write(s,"y="+tostr(p.y))
+		case "4bh":
+		       p.x+=d2
+                                                waituntil write(s,"x="+tostr(p.x))
+		case "4ah":
+	                           p.x-=d2
+                                                waituntil write(s,"x="+tostr(p.x))
+		default :
+		           goto XTOVER
+		endswitch
+		lin p,vl
+                           waituntil write(s,"moveline:"+ "x="+tostr(p.x)+";y="+tostr(p.y)+";z="+tostr(p.z))
+		endwhile
+		XTOVER:
+		waituntil write(s,"XTOVER")
+
+	case "70h":
+		waituntil write(s,"pause")
+		 goto again
+	case  "73h":
+		waituntil write(s,"selfinput")
+		byte date2[7]
+		int i=1
+		while(i<=7)
+			waituntil read(s,date2,7)
+			waituntil write(s,tostr(i)+":"+tostr(date2))
+			double db=0
+			db+=(toint(date2[1])-48)*100+(toint(date2[2])-48)*10+toint(date2[3])-48+(toint(date2[5])-48)/10.0+(toint(date2[6])-48)/100.0
+			if(tostr(date2[0])=="2dh")        
+				db=0-db
+			endif
+			switch(i)
+				 case 1:
+					jp.j1=db
+				 case 2:
+					jp.j2=db
+				case 3:
+					jp.j3=db
+				case 4:
+					jp.j4=db
+				case 5:
+					jp.j5=db
+				case 6:
+					jp.j6=db
+				case 7:
+					vs.per=db
+			endswitch
+			print tostr(db)
+			i++
+		endwhile
+	case "78h":
+		waituntil write(s,"close")
+		goto over
+	default :
+		waituntil write(s,"error")
+endswitch
+	movej jp,vs
+	endwhile
+over:
+endfunc
+
+func void interpause()
+stopmove fast
+endfunc
+
+func void main()
+init()
+movej j:{0,0,0,0,0,0}
+server()
+endfunc

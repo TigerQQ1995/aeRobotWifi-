@@ -1,0 +1,5 @@
+func void main()
+init()
+setdo(23,true)
+
+endfunc
